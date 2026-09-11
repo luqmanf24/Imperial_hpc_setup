@@ -25,6 +25,19 @@ zsh + powerlevel10k.
 And a `.claude/skills/` directory teaching Claude Code how to edit notebook
 cells, diagnose a dead tunnel, and write PBS jobs.
 
+## Before you start
+
+On your **laptop**:
+- VS Code, with the **Remote – Tunnels** extension installed
+  (`ms-vscode.remote-server`; it comes with the Remote Development pack).
+- A **GitHub account** — the tunnel authenticates through it. Nothing is
+  pushed anywhere; GitHub only brokers the connection.
+- Optional: a [Nerd Font](https://www.nerdfonts.com/) set as your terminal
+  font, or the starship prompt shows boxes instead of the git/folder icons.
+
+On the **cluster**: an RCS account and `git`, `make`, `curl` on the node
+(all standard). No root, no modules needed.
+
 ## Quickstart
 
 ```sh
@@ -42,6 +55,17 @@ Then on your laptop, in VS Code: `Cmd/Ctrl+Shift+P` →
 `install.sh` is safe to re-run. Flags: `--skip-blesh`, `--skip-starship`,
 `--skip-cli`, `--no-login`.
 
+**The login step** happens once. The installer prints something like
+
+```
+To grant access to the server, please log into https://github.com/login/device
+and use code ABCD-1234
+```
+
+Open that URL **on your laptop**, paste the code, approve. The token is cached
+in `~/.vscode/cli/token.json` on the cluster and normally lasts for months.
+If `stvsc` ever says `NOT LOGGED IN`, run `~/code tunnel user login` and repeat.
+
 ### Where to run `stvsc`
 
 On the node you want VS Code on. The usual flow at Imperial:
@@ -52,7 +76,37 @@ On the node you want VS Code on. The usual flow at Imperial:
 3. `stvsc`.
 
 For a tunnel that outlives the Jupyter session, `qvsc` submits one as a batch
-job instead.
+job instead — see below.
+
+### Day two, and every day after
+
+Jupyter-on-demand sessions have a walltime (typically 8 h). When it ends the
+node is gone, and with it your tunnel. The routine is:
+
+1. Start a new Jupyter session, open a terminal, `stvsc`.
+2. On the laptop, `Remote Tunnels: Connect to Tunnel` → same name as before.
+   VS Code remembers your open folders and extensions per tunnel name, so it
+   feels like you never left.
+
+Closing the laptop lid does **not** kill the tunnel — it runs detached on the
+node. Reconnect any time within the session's walltime.
+
+If VS Code says the tunnel is offline but `stvsc` said it was up, go through
+[docs/troubleshooting.md](docs/troubleshooting.md) top to bottom; the first
+check (`~/code tunnel user show`) is the answer most of the time.
+
+### `qvsc` — a tunnel as a batch job (experimental)
+
+```sh
+qvsc                          # submit, wait for a node, print the URL
+qvsc -l walltime=72:00:00     # extra args go to qsub
+qvsc_status
+qvsc_stop
+```
+
+Registers as `<STVSC_TUNNEL_NAME>-batch` so it coexists with the Jupyter one.
+Marked experimental: the logic is a straight sibling of `stvsc` and reviewed,
+but has fewer hours on it. Report issues.
 
 ## Configure
 
@@ -68,6 +122,18 @@ ENABLE_STARSHIP=1
 
 Your own aliases go in `shell/local.sh` (copy the `.example`). Both files are
 gitignored, so fork freely.
+
+## What lands where
+
+| path | what |
+|---|---|
+| `~/code` | the VS Code CLI binary (~35 MB) |
+| `~/tunnel.log` | live output of the current `stvsc` tunnel — `tail -f` it when in doubt |
+| `~/tunnel_job.<jobid>.log` | same, for `qvsc` |
+| `~/.vscode/cli/` | tunnel registration + GitHub token |
+| `~/.vscode/cli-batch/` | the batch tunnel's separate identity |
+| `~/.local/share/blesh/`, `~/.local/bin/starship`, `~/.config/starship.toml` | shell tooling |
+| `~/.bashrc` | one guarded three-line block; original backed up as `~/.bashrc.bak.hpc-setup.<stamp>` |
 
 ## How it is wired
 
