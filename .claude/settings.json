@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 auto/extractCellCode.py *)",
+      "Bash(python3 auto/cellNumbering.py *)",
+      "Bash(python3 auto/mdNumbering.py *)",
+      "Bash(python3 $HPC_SETUP_ROOT/auto/extractCellCode.py *)",
+      "Bash(qstat *)",
+      "Bash(~/code tunnel status)",
+      "Bash(~/code tunnel user show)",
+      "Bash(tail -n * ~/tunnel.log)"
+    ]
+  }
+}

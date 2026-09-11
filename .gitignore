@@ -1,0 +1,19 @@
+# per-user config -- never shared
+hpc_setup.conf
+shell/local.sh
+.claude/settings.local.json
+
+# runtime junk
+*.log
+*.bak*
+.temp/
+__pycache__/
+
+# things that must never end up in a dotfiles repo, named defensively
+.git-credentials
+.gitconfig
+.credentials.json
+token.json
+code_tunnel.json
+agent-host-token
+vscode_cli.tar.gz

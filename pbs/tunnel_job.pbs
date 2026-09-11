@@ -1,0 +1,74 @@
+#PBS -l walltime=24:00:00
+#PBS -l select=1:ncpus=8:mem=64gb
+#PBS -N vsc_tunnel
+
+# =============================================================================
+# A VS Code tunnel on a BATCH compute node -- the qsub-able sibling of stvsc.
+#
+#   qvsc                                         # the easy way (shell/35-batch-tunnel.sh)
+#   qsub pbs/tunnel_job.pbs                      # defaults in the header above
+#   qsub -l walltime=72:00:00 pbs/tunnel_job.pbs     # override resources
+#   qsub -v TUNNEL_NAME=my-big-run pbs/tunnel_job.pbs
+#
+# Then locally:  Cmd/Ctrl+Shift+P -> "Remote Tunnels: Connect to Tunnel"
+#                -> pick the name printed in ~/tunnel_job.<jobid>.log
+#
+# WHY BATCH, NOT `qsub -I`. An interactive job dies with the terminal that
+# launched it -- and that terminal is itself inside the Jupyter tunnel. Chaining
+# them means one dropped connection takes out both. Here the tunnel IS the job's
+# main process: no parent terminal exists to lose, and PBS reaps it at walltime.
+#
+# WHY A SEPARATE --cli-data-dir. ~/.vscode/cli holds ONE registered identity
+# (code_tunnel.json) plus tunnel-stable.lock, on shared home. Two tunnels out of
+# that one directory collide -- the "Command-line options will not be applied"
+# failure stvsc reports. This job gets its own data dir, so it can coexist with
+# the Jupyter tunnel instead of evicting it.
+#
+# No setsid here, deliberately. A batch job has no controlling TTY, so the
+# SIGTTIN/SIGTTOU suspension that setsid defends against in stvsc cannot occur.
+# Foreground is both simpler and what makes the job's lifetime track the tunnel.
+# =============================================================================
+set -o pipefail
+
+CLI="$HOME/code"
+NAME="${TUNNEL_NAME:-hpc-compute-batch}"
+JOBID="${PBS_JOBID%%.*}"
+DATA_DIR="$HOME/.vscode/cli-batch"
+LOG="$HOME/tunnel_job.${JOBID}.log"
+
+exec > >(tee -a "$LOG") 2>&1
+
+echo "========================================================================"
+echo "  tunnel name : $NAME"
+echo "  job         : $PBS_JOBID"
+echo "  node        : $(hostname)"
+echo "  data dir    : $DATA_DIR"
+echo "  log         : $LOG"
+echo "========================================================================"
+
+[ -x "$CLI" ] || { echo "ERROR: $CLI missing. Run stvsc once on the Jupyter node to fetch it."; exit 1; }
+
+# Seed auth from the working data dir so this does NOT need a device-code login.
+# Only the token is copied; the tunnel identity (code_tunnel.json) is left behind
+# on purpose, so this job registers its own name rather than stealing the other's.
+mkdir -p "$DATA_DIR"
+if [ ! -f "$DATA_DIR/token.json" ] && [ -f "$HOME/.vscode/cli/token.json" ]; then
+    cp "$HOME/.vscode/cli/token.json" "$DATA_DIR/token.json"
+    chmod 600 "$DATA_DIR/token.json"
+    echo "Seeded auth token from ~/.vscode/cli"
+fi
+if [ ! -f "$DATA_DIR/token.json" ]; then
+    echo "ERROR: no token. Run ONCE on a login node, then resubmit:"
+    echo "    $CLI tunnel user login --cli-data-dir $DATA_DIR"
+    exit 1
+fi
+
+echo "Starting tunnel in the foreground; the job ends when the tunnel ends."
+echo "Watch for the 'Open: https://vscode.dev/tunnel/...' line below."
+echo
+
+exec "$CLI" tunnel \
+    --accept-server-license-terms \
+    --cli-data-dir "$DATA_DIR" \
+    --name "$NAME" \
+    < /dev/null

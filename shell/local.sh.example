@@ -1,0 +1,36 @@
+# =============================================================================
+# shell/local.sh -- YOUR private aliases and functions.
+#
+#     cp shell/local.sh.example shell/local.sh
+#
+# This file is gitignored, so nothing here reaches the public repo. It is
+# sourced LAST, so it can override anything the numbered modules define.
+#
+# Below is a worked example from the author's own setup -- per-project jump
+# aliases and matching qsub shortcuts. The pattern is what matters, not the
+# specific names: one PROJECT_ROOT, then short aliases hanging off it.
+# =============================================================================
+
+PROJECT_ROOT="$HOME/my_project"
+
+# --- jump straight to the directory you submit from -------------------------
+alias cd00="cd $PROJECT_ROOT/00_small_case/hpc_script"
+alias cd01="cd $PROJECT_ROOT/01_verification/hpc_script"
+alias cd02="cd $PROJECT_ROOT/02_production/hpc_script"
+
+# --- submit the run you want without retyping the filename ------------------
+# These are deliberately dumb: they assume you already `cd00`'d. That is a
+# feature -- it keeps the alias from silently submitting the wrong case.
+alias qsub01="qsub small_case.pbs"
+alias qsub02="qsub small_case2.pbs"
+
+# --- language toolchains installed into $HOME --------------------------------
+# e.g. juliaup writes a block like this into ~/.bashrc; move it here instead so
+# your ~/.bashrc stays a one-line source of this repo.
+#
+# case ":$PATH:" in
+#     *":$HOME/.juliaup/bin:"*) ;;
+#     *) export PATH="$HOME/.juliaup/bin${PATH:+:${PATH}}" ;;
+# esac
+# [ -f "$HOME/.julia/juliaup/completions/bash.sh" ] \
+#     && source "$HOME/.julia/juliaup/completions/bash.sh"

@@ -1,0 +1,30 @@
+# =============================================================================
+# hpc_setup.conf -- the only file you need to edit.
+#
+# install.sh copies this to hpc_setup.conf on first run and never overwrites it,
+# so your settings survive a `git pull`. hpc_setup.conf is gitignored.
+# =============================================================================
+
+# Your cluster username. Used by the `qs` alias (qstat -u) and by the tunnel
+# process matching. $USER is right on almost every cluster.
+HPC_USER="${USER}"
+
+# Name your VS Code tunnel registers under. This is what you pick in
+# "Remote Tunnels: Connect to Tunnel" locally, so make it something you will
+# recognise. It must be unique across YOUR tunnels (not globally).
+#
+# The batch tunnel (qvsc) appends "-batch" to this automatically.
+STVSC_TUNNEL_NAME="hpc-compute"
+
+# Where you cloned this repo.
+HPC_SETUP_ROOT="$HOME/Imperial_hpc_setup"
+
+# --- optional shell tooling -------------------------------------------------
+# Set to 0 to skip, even if the tool is installed.
+ENABLE_BLESH=1        # ble.sh: inline history autosuggestions + highlighting
+ENABLE_STARSHIP=1     # starship: two-line git-aware prompt
+
+# --- batch tunnel (qvsc / tunnel_job.pbs) resources -------------------------
+# Override without editing the .pbs file. These are passed to qsub.
+QVSC_WALLTIME="24:00:00"
+QVSC_SELECT="1:ncpus=8:mem=64gb"

@@ -1,0 +1,51 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Two-line prompt (p10k style): info line, then the input line.
+format = """
+$directory$git_branch$git_status$cmd_duration
+$character"""
+
+add_newline = true
+
+# --- RDS is a network filesystem: never let the prompt hang the shell ---
+scan_timeout = 50
+command_timeout = 1000
+
+[directory]
+# Path relative to $HOME, shown as ~/... , never truncated to the repo root.
+truncate_to_repo = false
+truncation_length = 6
+truncation_symbol = "…/"
+home_symbol = "~"
+style = "bold cyan"
+format = "[ $path]($style)[$read_only]($read_only_style) "
+read_only = " "
+read_only_style = "bold red"
+
+[git_branch]
+symbol = " "
+style = "bold purple"
+format = "[$symbol$branch]($style) "
+
+[git_status]
+style = "bold yellow"
+format = '([$all_status$ahead_behind]($style))'
+conflicted = "= "
+ahead     = "⇡${count} "
+behind    = "⇣${count} "
+diverged  = "⇕⇡${ahead_count}⇣${behind_count} "
+untracked = "?${count} "
+stashed   = " ${count} "
+modified  = "!${count} "
+staged    = "+${count} "
+renamed   = "»${count} "
+deleted   = "✘${count} "
+
+[cmd_duration]
+min_time = 2000
+style = "bold yellow"
+format = "[ $duration]($style) "
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol   = "[❯](bold red)"
